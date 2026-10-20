@@ -34,11 +34,11 @@ Predictions are also averaged across four random seeds.
 R / tidyverse / ggplot2 / LightGBM / R Markdown
 
 ## 5. Project Structure
-1. `rent_expectation_01_data_preprocessing.Rmd` - Data cleaning and feature engineering
+1. `rent_prediction_01_data_preprocessing.Rmd` - Data cleaning and feature engineering
 
-2. `rent_expectation_02_EDA.Rmd` - Exploratory data analysis
+2. `rent_prediction_02_EDA.Rmd` - Exploratory data analysis
 
-3. `rent_expectation_03_modeling.Rmd` - Model training, ensemble prediction, and submission file creation
+3. `rent_prediction_03_modeling.Rmd` - Model training, ensemble prediction, and submission file creation
 
 ## 6. Competition Attribution
 This project was developed as part of my participation in a SIGNATE rental price prediction competition.
