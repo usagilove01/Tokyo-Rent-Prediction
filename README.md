@@ -11,7 +11,7 @@ The workflow includes data preprocessing, exploratory data analysis (EDA), multi
 ## 2. Project Workflow
 
 1. **Data Preprocessing:** Clean raw data and extract property features.
-2. **Exploratory Data Analysis:** Examine rental price distributions, correlations, and relationships between property characteristics.
+2. **Exploratory Data Analysis (EDA):** Examine rental price distributions, correlations, and relationships between property characteristics.
 3. **Regression Modeling:** Develop and evaluate multiple linear regression models.
 4. **Machine Learning:** Build LightGBM models and combine predictions using a weighted ensemble.
 
