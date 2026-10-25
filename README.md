@@ -48,16 +48,24 @@ The final ensemble achieved a **SIGNATE submission RMSE of 18,271.76 JPY**.
 
 | File | Description |
 |---|---|
-| `rent_prediction_01_data_preprocessing.Rmd` | Data cleaning and feature engineering |
-| `rent_prediction_02_EDA.Rmd` | Exploratory data analysis |
-| `rent_prediction_03_regression_modeling.Rmd` | Multiple regression modeling and evaluation |
-| `rent_prediction_04_machine_learning.Rmd` | LightGBM ensemble and competition submission |
+| [01 Data Preprocessing](rent_prediction_01_data_preprocessing.Rmd) | Data cleaning and feature engineering |
+| [02 EDA](rent_prediction_02_EDA.Rmd) | Exploratory data analysis |
+| [03 Regression Modeling](rent_prediction_03_regression_modeling.Rmd) | Multiple regression modeling and evaluation |
+| [04 Machine Learning](rent_prediction_04_machine_learning.Rmd) | LightGBM ensemble and competition submission |
 
-## 6. AI Assistance
+## 6. How to Run
+
+1. Download `train.csv`, `test.csv`, and `sample_submit.csv` from SIGNATE.
+2. Place the datasets in the project directory.
+3. Run `01_data_preprocessing` to generate the processed datasets.
+4. Run `02_EDA` and `03_regression_modeling`.
+5. Run `04_machine_learning` to generate `submission.csv`.
+
+## 7. AI Assistance
 
 AI tools were used to assist with the implementation of machine learning models.
 
-## 7. Competition Attribution
+## 8. Competition Attribution
 
 This project was developed using data from a SIGNATE rental price prediction competition.
 
