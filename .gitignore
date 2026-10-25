@@ -48,3 +48,11 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Competition datasets and generated files
+*.csv
+
+# R temporary files
+.Rhistory
+.RData
+.Rproj.user/
