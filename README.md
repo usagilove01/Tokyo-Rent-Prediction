@@ -70,3 +70,9 @@ AI tools were used to assist with the implementation of machine learning models.
 This project was developed using data from a SIGNATE rental price prediction competition.
 
 The original competition datasets are not redistributed in this repository.
+
+## 8. Competition Attribution
+
+This project was developed as part of my participation in a [SIGNATE rental price prediction competition](https://user.competition.signate.jp/ja/competition/detail/?competition=fe24ccddc3174d518376fa1316e91184).
+
+The original competition datasets are not redistributed in this repository.
