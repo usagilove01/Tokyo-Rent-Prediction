@@ -1,0 +1,394 @@
+---
+title: "rent_prediction_02_EDA"
+author: "usagilove01"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+
+# Set timezone
+Sys.setenv(TZ = "Asia/Tokyo")
+```
+
+
+
+# 1. Introduction
+This analysis explores the relationships between monthly rent and property characteristics in Tokyo's 23 wards using descriptive statistics, visualizations, correlation analysis, and hypothesis testing.
+
+
+
+# 2. Libraries
+```{r libraries}
+library(tidyverse)
+library(knitr)
+```
+
+
+
+# 3. Data Overview
+## 3.1 Load Data
+```{r load-data}
+# Load the preprocessed training dataset
+df <- read.csv(
+  "processed_train_data.csv",
+  fileEncoding = "UTF-8-BOM"
+)
+```
+
+
+## 3.2 Dataset Structure
+```{r dataset-structure}
+# Check dataset dimensions
+cat("Number of observations:", nrow(df), "\n")
+cat("Number of variables:", ncol(df), "\n")
+
+# Examine variable names and data types
+glimpse(df)
+```
+
+
+
+## 3.3 Missing Values
+```{r missing-values}
+# Calculate missing values for each variable
+missing_summary <- df %>%
+  summarise(
+    across(
+      everything(),
+      list(
+        missing_count = ~ sum(is.na(.x)),
+        missing_rate = ~ mean(is.na(.x)) * 100
+      )
+    )
+  ) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = c("variable", ".value"),
+    names_pattern = "^(.*)_(missing_count|missing_rate)$"
+  ) %>%
+  arrange(desc(missing_rate))
+
+
+# Display missing values for all variables
+missing_summary %>%
+  mutate(missing_rate = round(missing_rate, 2)) %>%
+  kable(
+    col.names = c("Variable", "Missing Count", "Missing Rate (%)"),
+    caption = "Missing Values by Variable"
+  )
+```
+
+
+
+## 3.4 Descriptive Statistics
+```{r descriptive-statistics} 
+# Select key numerical variables with low missing rates
+numeric_vars <- c(
+  "rent",
+  "area",
+  "building_age",
+  "floor",
+  "total_floor",
+  "walk_1"
+)
+
+
+# Summarize selected variables
+summary(df[numeric_vars])
+```
+
+
+
+## 3.5 Rent Distribution
+```{r rent-distribution, fig.width=9, fig.height=5} 
+# Visualize the distribution of monthly rent
+ggplot(df, aes(x = rent)) +
+  geom_histogram(
+    bins = 60,
+    fill = "steelblue",
+    color = "white"
+  ) +
+  geom_vline(
+    xintercept = median(df$rent, na.rm = TRUE),
+    color = "red",
+    linetype = "dashed",
+    linewidth = 0.8
+  ) +
+  labs(
+    title = "Distribution of Monthly Rent",
+    x = "Monthly Rent (JPY)",
+    y = "Number of Properties"
+  ) +
+  scale_x_continuous(labels = scales::comma) +
+  theme_minimal(base_size = 12)
+
+
+# Zoom in on the main rental price range
+ggplot(df, aes(x = rent)) +
+  geom_histogram(
+    binwidth = 10000,
+    boundary = 0,
+    fill = "steelblue",
+    color = "white"
+  ) +
+  geom_vline(
+    xintercept = median(df$rent, na.rm = TRUE),
+    color = "red",
+    linetype = "dashed",
+    linewidth = 0.8
+  ) +
+  coord_cartesian(xlim = c(0, 500000)) +
+  labs(
+    title = "Distribution of Monthly Rent (0-500,000 JPY)",
+    x = "Monthly Rent (JPY)",
+    y = "Number of Properties"
+  ) +
+  scale_x_continuous(labels = scales::comma) +
+  theme_minimal(base_size = 12)
+```
+
+
+## 3.6 Log Transformation
+```{r log_transformation}
+# Examine the distribution of log-transformed rent
+ggplot(df %>% filter(rent > 0), aes(x = log(rent))) +
+  geom_histogram(
+    bins = 50,
+    fill = "steelblue",
+    color = "white"
+  ) +
+  labs(
+    title = "Distribution of Log-Transformed Monthly Rent",
+    x = "Log(Monthly Rent)",
+    y = "Number of Properties"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+
+
+# 4. Relationships Between Rent and Numerical Variables
+## 4.1 Scatter Plots
+```{r numerical-scatter-plots, fig.width=10, fig.height=7}
+# Select numerical variables for exploratory analysis
+plot_vars <- c("area", "building_age", "walk_1")
+
+
+# Reshape data for visualization
+scatter_data <- df %>%
+  select(rent, all_of(plot_vars)) %>%
+  pivot_longer(
+    cols = all_of(plot_vars),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+
+# Plot relationships with monthly rent
+ggplot(scatter_data, aes(x = value, y = rent)) +
+  geom_point(alpha = 0.12, size = 0.6, color = "steelblue") +
+  facet_wrap(~ variable, scales = "free_x") +
+  scale_y_continuous(labels = scales::comma) +
+  labs(
+    title = "Relationships Between Rent and Numerical Variables",
+    x = "Property Characteristic",
+    y = "Monthly Rent (JPY)"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+
+
+## 4.2 Correlation Analysis
+```{r correlation-analysis}
+# Select variables for correlation analysis
+cor_vars <- c(
+  "area",
+  "building_age",
+  "walk_1",
+  "floor",
+  "total_floor"
+)
+
+
+# Calculate Pearson and Spearman correlations with rent
+correlation_results <- map_dfr(cor_vars, function(var) {
+
+  complete_data <- df %>%
+    select(rent, all_of(var)) %>%
+    drop_na()
+
+  tibble(
+    variable = var,
+    n = nrow(complete_data),
+    pearson = cor(
+      complete_data$rent,
+      complete_data[[var]],
+      method = "pearson"
+    ),
+    spearman = cor(
+      complete_data$rent,
+      complete_data[[var]],
+      method = "spearman"
+    )
+  )
+})
+
+
+# Display correlation coefficients
+correlation_results %>%
+  mutate(across(c(pearson, spearman), ~ round(.x, 3))) %>%
+  kable(
+    caption = "Pearson and Spearman Correlations with Monthly Rent"
+  )
+```
+
+
+
+# 5. Relationships Between Rent and Categorical Variables
+## 5.1 Rental Prices by Ward
+```{r ward-summary} 
+# Calculate descriptive statistics by ward
+ward_summary <- df %>%
+  group_by(ward) %>%
+  summarise(
+    n = n(),
+    mean_rent = mean(rent, na.rm = TRUE),
+    median_rent = median(rent, na.rm = TRUE),
+    sd_rent = sd(rent, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(median_rent))
+
+
+# Display summary statistics
+ward_summary %>%
+  mutate(
+    across(
+      c(mean_rent, median_rent, sd_rent),
+      ~ round(.x, 0)
+    )
+  ) %>%
+  kable(
+    caption = "Descriptive Statistics of Monthly Rent by Ward"
+  )
+```
+
+
+## 5.2 Rent Distribution by Ward
+```{r}
+# Compare rent distributions across wards
+ggplot(df, aes(x = reorder(ward, rent, median), y = rent)) +
+  geom_boxplot(
+    fill = "steelblue",
+    color = "gray30",
+    width = 0.65,
+    outlier.alpha = 0.08,
+    outlier.size = 0.5
+  ) +
+  coord_flip(ylim = c(0, 400000)) +
+  scale_y_continuous(
+    labels = scales::comma,
+    breaks = seq(0, 400000, 50000)
+  ) +
+  labs(
+    title = "Rent Distribution by Ward",
+    x = NULL,
+    y = "Monthly Rent (JPY)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    axis.text.y = element_text(size = 11),
+    panel.grid.major.y = element_blank()
+  )
+
+```
+
+
+## 5.3 One-way ANOVA: Rent by ward
+```{r one_way_anova_rent_by_ward}
+# One-way ANOVA: Rent by ward
+ward_anova <- aov(rent ~ ward, data = df)
+
+summary(ward_anova)
+
+
+# Eta-squared effect size
+anova_table <- anova(ward_anova)
+
+anova_table["ward", "Sum Sq"] / sum(anova_table[, "Sum Sq"])
+```
+
+
+## 5.4 Monthly Rent by Building Structure
+```{r rent_by_building_structure}
+df %>%
+  group_by(building_structure) %>%
+  summarise(
+    n = n(),
+    mean_rent = mean(rent),
+    median_rent = median(rent),
+    sd_rent = sd(rent),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(median_rent)) %>%
+  kable(
+    caption = "Monthly Rent by Building Structure"
+  )
+```
+
+
+## 5.5 Monthly Rent by Layout
+```{r rent_by_layout}
+# Compare monthly rent by layout
+df %>%
+  group_by(layout) %>%
+  summarise(
+    n = n(),
+    mean_rent = mean(rent),
+    median_rent = median(rent),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(n)) %>%
+  kable(
+    caption = "Monthly Rent by Layout"
+  )
+```
+
+
+## 5.6 Floor Area by Layout
+```{r floor_area_by_layout}
+# Compare floor area across common layouts
+df %>%
+  group_by(layout) %>%
+  summarise(
+    n = n(),
+    median_area = median(area, na.rm = TRUE),
+    mean_area = mean(area, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(n >= 100) %>%
+  arrange(median_area) %>%
+  kable(
+    caption = "Floor Area by Layout"
+  )
+```
+
+
+
+# 6. Conclusion
+Exploratory analysis revealed associations between rental prices and property characteristics, including floor area, building age, walking distance, and location.
+
+These findings provide a foundation for feature selection and regression modeling in the subsequent analysis.

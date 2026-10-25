@@ -1,0 +1,452 @@
+---
+title: "rent_prediction_03_regression_modeling"
+author: "usagilove01"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+  )
+
+
+# Set timezone
+Sys.setenv(TZ = "Asia/Tokyo")
+```
+
+
+
+# 1. Introduction
+This analysis develops and evaluates multiple linear regression models to predict monthly rental prices in Tokyo's 23 wards, progressively incorporating additional features and more complex relationships.
+
+
+
+# 2. Libraries
+```{r libraries}
+library(tidyverse)
+library(knitr)
+```
+
+
+
+# 3. Load Data
+```{r load_data}
+# Load the preprocessed training dataset
+df <- read.csv(
+  "processed_train_data.csv",
+  fileEncoding = "UTF-8-BOM"
+)
+```
+
+
+
+# 4. Regression Model Development
+## 4.1 Train-Validation Split
+```{r train_validation_split}
+set.seed(123)
+
+train_index <- sample(
+  seq_len(nrow(df)),
+  size = floor(0.8 * nrow(df))
+)
+
+train_df <- df[train_index, ]
+valid_df <- df[-train_index, ]
+```
+
+
+## 4.2 Data Preparation
+```{r model_refinement}
+# Group infrequent categories
+group_categories <- function(train, valid, col, new_col,
+                             min_count, exclude = character()) {
+
+  train_values <- as.character(train[[col]])
+  valid_values <- as.character(valid[[col]])
+
+  train_values[is.na(train_values)] <- "missing"
+  valid_values[is.na(valid_values)] <- "missing"
+
+  counts <- table(train_values)
+
+  rare <- names(counts[counts <= min_count])
+  grouped <- unique(c(rare, exclude))
+
+  train_values[train_values %in% grouped] <- "other"
+
+  valid_values[
+    valid_values %in% grouped |
+      !(valid_values %in% names(counts))
+  ] <- "other"
+
+  train[[new_col]] <- train_values
+  valid[[new_col]] <- valid_values
+
+  list(train = train, valid = valid)
+}
+
+
+# Impute numerical missing values
+impute_numeric <- function(train, valid, cols) {
+
+  for (col in cols) {
+
+    median_value <- median(train[[col]], na.rm = TRUE)
+
+    if (!is.finite(median_value)) {
+      stop(paste("Cannot calculate median for:", col))
+    }
+
+    missing_col <- paste0(col, "_missing")
+
+    train[[missing_col]] <- as.integer(is.na(train[[col]]))
+    valid[[missing_col]] <- as.integer(is.na(valid[[col]]))
+
+    train[[col]][is.na(train[[col]])] <- median_value
+    valid[[col]][is.na(valid[[col]])] <- median_value
+  }
+
+  list(train = train, valid = valid)
+}
+
+
+# Align categorical values with training data
+align_categories <- function(train, valid, cols) {
+
+  for (col in cols) {
+
+    train[[col]] <- as.character(train[[col]])
+    valid[[col]] <- as.character(valid[[col]])
+
+    train[[col]][is.na(train[[col]])] <- "missing"
+    valid[[col]][is.na(valid[[col]])] <- "missing"
+
+    train_levels <- unique(train[[col]])
+    unknown <- !(valid[[col]] %in% train_levels)
+
+    if (any(unknown)) {
+
+      if (!("other" %in% train_levels)) {
+        stop(paste("No 'other' category in:", col))
+      }
+
+      valid[[col]][unknown] <- "other"
+    }
+  }
+
+  list(train = train, valid = valid)
+}
+
+
+# Combine preprocessing steps
+prepare_cv_data <- function(train, valid) {
+
+  # Group stations
+  data <- group_categories(
+    train, valid,
+    "station_1", "station_1_grouped", 5
+  )
+
+  # Group towns
+  data <- group_categories(
+    data$train, data$valid,
+    "town", "town_grouped_18", 10,
+    exclude = c("南千住", "佃")
+  )
+
+  # Group layouts
+  data <- group_categories(
+    data$train, data$valid,
+    "layout", "layout_grouped", 5
+  )
+
+  train <- data$train
+  valid <- data$valid
+
+  # Impute numeric variables
+  data <- impute_numeric(
+    train, valid,
+    c(
+      "building_age",
+      "floor",
+      "total_floor",
+      "burner_count",
+      "walk_2",
+      "walk_3"
+    )
+  )
+
+  train <- data$train
+  valid <- data$valid
+
+  # Handle missing categorical values
+  for (col in c("stove_type", "parking_status")) {
+    train[[col]][is.na(train[[col]])] <- "missing"
+    valid[[col]][is.na(valid[[col]])] <- "missing"
+  }
+
+  # Group bicycle parking categories
+  train$bicycle_parking_grouped <- as.character(
+    train$bicycle_parking_status
+  )
+
+  valid$bicycle_parking_grouped <- as.character(
+    valid$bicycle_parking_status
+  )
+
+  for (dataset in c("train", "valid")) {
+    x <- get(dataset)$bicycle_parking_grouped
+
+    x[is.na(x)] <- "missing"
+    x[x %in% c("nearby", "unavailable")] <- "other"
+
+    if (dataset == "train") {
+      train$bicycle_parking_grouped <- x
+    } else {
+      valid$bicycle_parking_grouped <- x
+    }
+  }
+
+  # Handle missing contract information
+  train$fixed_term[is.na(train$fixed_term)] <- 0
+  valid$fixed_term[is.na(valid$fixed_term)] <- 0
+
+  # Align categorical levels
+  align_categories(
+    train,
+    valid,
+    c(
+      "station_1_grouped",
+      "town_grouped_18",
+      "layout_grouped",
+      "stove_type",
+      "parking_status",
+      "bicycle_parking_grouped",
+      "ward",
+      "building_structure"
+    )
+  )
+}
+
+
+# Apply preprocessing
+model_data <- prepare_cv_data(
+  train_df,
+  valid_df
+)
+
+train_model_df <- model_data$train
+valid_model_df <- model_data$valid
+```
+
+
+## 4.3 Initial Regression Models
+```{r}
+# Model 1: Basic property characteristics
+model_1 <- lm(
+  rent ~ area + building_age + floor + total_floor + walk_1,
+  data = train_model_df
+)
+
+
+# Model 2: Add location and building characteristics
+model_2 <- update(
+  model_1,
+  . ~ . + ward + layout_grouped + building_structure
+)
+
+
+# Model 3: Add housing facilities
+has_vars <- grep("^has_", names(train_model_df), value = TRUE)
+
+model_3 <- update(
+  model_2,
+  as.formula(
+    paste(". ~ . +", paste(has_vars, collapse = " + "))
+  )
+)
+```
+
+
+
+## 4.4 Final Regression Model
+```{r final_regrssion_model}
+# Select housing facility variables
+has_vars <- grep(
+  "^has_",
+  names(df),
+  value = TRUE
+)
+
+
+# Remove selected variables
+has_vars <- setdiff(
+  has_vars,
+  c("has_oil_heating", "has_well_water")
+)
+
+
+# Features used in the refined regression models
+base_features <- c(
+  "area",
+  "building_age",
+  "floor",
+  "total_floor",
+  "walk_1",
+  "ward",
+  "layout_grouped",
+  "building_structure",
+  has_vars,
+  "stove_installable",
+  "stove_type",
+  "burner_count",
+  "burner_count_missing",
+  "station_1_grouped",
+  "walk_2",
+  "walk_3",
+  "fixed_term",
+  "town_grouped_18",
+  "parking_status",
+  "bicycle_parking_grouped",
+  "floor_missing",
+  "total_floor_missing"
+)
+
+
+# Final regression model
+final_formula <- reformulate(
+  c(
+    base_features,
+    "I(area^2)",
+    "I(building_age^2)",
+    "area:ward",
+    "area:building_age"
+  ),
+  response = "log(rent)"
+)
+
+
+# Final model
+final_model <- lm(
+  final_formula,
+  data = train_model_df
+)
+```
+
+
+
+# 5. Model Evaluation
+## 5.1 Prediction Performance
+```{r prediction_performance}
+# Store regression models
+models <- list(
+  Model_1 = model_1,
+  Model_2 = model_2,
+  Model_3 = model_3,
+  Final = final_model
+)
+
+
+# Predict rental prices
+predictions <- lapply(
+  models,
+  predict,
+  newdata = valid_model_df
+)
+
+
+# Convert log predictions to JPY
+predictions$Final <- exp(predictions$Final)
+
+
+# Check predictions
+stopifnot(
+  all(sapply(
+    predictions,
+    function(x) {
+      length(x) == nrow(valid_model_df) &&
+        all(is.finite(x))
+    }
+  ))
+)
+
+
+# RMSE function
+rmse <- function(actual, predicted) {
+  sqrt(mean((actual - predicted)^2))
+}
+
+
+# Compare RMSE
+rmse_results <- data.frame(
+  Model = names(models),
+  RMSE = sapply(
+    predictions,
+    function(x) rmse(valid_model_df$rent, x)
+  )
+)
+
+knitr::kable(
+  rmse_results,
+  row.names = FALSE,
+  digits = 2,
+  caption = "Validation RMSE Comparison (JPY)"
+)
+```
+
+
+## 5.2 Statistical Evaluation
+```{r statistical_evaluation}
+# Compare initial regression models
+AIC(model_1, model_2, model_3)
+BIC(model_1, model_2, model_3)
+
+
+# Adjusted R-squared
+sapply(
+  models[1:3],
+  function(m) summary(m)$adj.r.squared
+)
+
+
+# Partial F-test
+anova_results <- anova(model_1, model_2, model_3)
+
+f_test <- data.frame(
+  Comparison = c("Model 1 vs 2", "Model 2 vs 3"),
+  F_value = round(anova_results$F[2:3], 2),
+  P_value = format.pval(
+    anova_results$`Pr(>F)`[2:3],
+    digits = 3,
+    eps = 0.0001
+  )
+)
+
+knitr::kable(f_test)
+```
+
+
+## 5.3 Regression Diagnostics
+```{r regression_diagnostics, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
+
+plot(final_model)
+
+par(mfrow = c(1, 1))
+```
+The diagnostic plots suggest deviations from residual normality and possible heteroscedasticity, particularly for higher fitted values.
+
+Several observations also exhibit unusually large residuals or high leverage.
+
+
+
+# 6. Conclusion
+The final regression model improved prediction accuracy through feature engineering and nonlinear relationships, although residual diagnostics revealed some limitations.
+
+These findings motivated the use of machine learning models in the subsequent analysis.
