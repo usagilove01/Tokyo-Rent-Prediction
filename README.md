@@ -1,48 +1,63 @@
-# Tokyo-Rent-Prediction
-Predicting rental prices in Tokyo's 23 wards using R, statistical analysis, and LightGBM.
+# Tokyo Rent Prediction
+
+Predicting monthly rental prices in Tokyo's 23 wards using R, statistical analysis, and machine learning.
 
 ## 1. Overview
-This project aims to predict monthly rental prices for properties in Tokyo's 23 wards using statistical analysis and machine learning.
 
-The project was developed as part of a SIGNATE rental price prediction competition using R.
+This project analyzes and predicts rental prices using property data from a SIGNATE competition.
+
+The workflow includes data preprocessing, exploratory data analysis (EDA), multiple regression modeling, and LightGBM.
 
 ## 2. Project Workflow
-The analysis consists of three main stages:
 
-1. Data Preprocessing: Cleaning raw data, handling missing values, and creating features from property information. 
+1. **Data Preprocessing:** Clean raw data and extract property features.
+2. **Exploratory Data Analysis:** Examine rental price distributions, correlations, and relationships between property characteristics.
+3. **Regression Modeling:** Develop and evaluate multiple linear regression models.
+4. **Machine Learning:** Build LightGBM models and combine predictions using a weighted ensemble.
 
-2. Exploratory Data Analysis (EDA): Investigating rental price distributions, correlations, and relationships between property characteristics and rent.
+## 3. Modeling and Results
 
-3. Modeling: Training LightGBM models and combining predictions using an ensemble approach.
+### Multiple Regression
 
-## 3. Modeling Approach
-Two LightGBM approaches were used:
+Regression models were refined using additional features, nonlinear terms, interaction effects, and a log transformation.
 
-1. Direct Rent Prediction: Predicting monthly rental prices directly.
+The final model achieved a validation RMSE of **18,435.05 JPY**.
 
-2. Rent per Square Meter Prediction: Predicting rent per square meter and multiplying by property area.
+### LightGBM
 
-The final predictions combine both approaches using a weighted average:
+Two prediction approaches were combined:
 
 - Direct rent prediction: 30%
-
 - Rent per square meter prediction: 70%
 
-Predictions are also averaged across four random seeds.
+Predictions were averaged across four random seeds.
+
+The final ensemble achieved a **SIGNATE submission RMSE of 18,271.76 JPY**.
+
+*The regression validation RMSE and competition submission RMSE were calculated on different datasets and are not directly comparable.*
 
 ## 4. Tools and Technologies
-R / tidyverse / ggplot2 / LightGBM / R Markdown
+
+- R
+- tidyverse / ggplot2
+- LightGBM
+- R Markdown
 
 ## 5. Project Structure
-1. `rent_prediction_01_data_preprocessing.Rmd` - Data cleaning and feature engineering
 
-2. `rent_prediction_02_EDA.Rmd` - Exploratory data analysis
+| File | Description |
+|---|---|
+| `rent_prediction_01_data_preprocessing.Rmd` | Data cleaning and feature engineering |
+| `rent_prediction_02_EDA.Rmd` | Exploratory data analysis |
+| `rent_prediction_03_regression_modeling.Rmd` | Multiple regression modeling and evaluation |
+| `rent_prediction_04_machine_learning.Rmd` | LightGBM ensemble and competition submission |
 
-3. `rent_prediction_03_modeling.Rmd` - Model training, ensemble prediction, and submission file creation
+## 6. AI Assistance
 
-## 6. Competition Attribution
-This project was developed as part of my participation in a SIGNATE rental price prediction competition.
+AI tools were used to assist with the implementation of machine learning models.
 
-The source code and analysis results are published in accordance with the competition's information disclosure policy.
+## 7. Competition Attribution
+
+This project was developed using data from a SIGNATE rental price prediction competition.
 
 The original competition datasets are not redistributed in this repository.
