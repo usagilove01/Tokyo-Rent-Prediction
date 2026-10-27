@@ -12,18 +12,16 @@ The workflow includes data preprocessing, exploratory data analysis (EDA), multi
 
 | File | Description |
 |---|---|
-| [01 Data Preprocessing](rent_prediction_01_data_preprocessing.Rmd) | Data cleaning and feature engineering |
-| [02 EDA](rent_prediction_02_EDA.Rmd) | Exploratory data analysis |
-| [03 Regression Modeling](rent_prediction_03_regression_modeling.Rmd) | Multiple regression modeling and evaluation |
-| [04 Machine Learning](rent_prediction_04_machine_learning.Rmd) | LightGBM ensemble and competition submission |
+| [01 Data Preprocessing](https://github.com/usagilove01/Tokyo-Rent-Prediction/blob/main/rent_prediction_01_data_preprocessing.Rmd) | Data cleaning and feature engineering |
+| [02 EDA](https://github.com/usagilove01/Tokyo-Rent-Prediction/blob/main/rent_prediction_02_EDA.Rmd) | Exploratory data analysis |
+| [03 Regression Modeling](https://github.com/usagilove01/Tokyo-Rent-Prediction/blob/main/rent_prediction_03_regression_modeling.Rmd) | Multiple regression modeling and evaluation |
+| [04 Machine Learning](https://github.com/usagilove01/Tokyo-Rent-Prediction/blob/main/rent_prediction_04_machine_learning.Rmd) | LightGBM ensemble and competition submission |
 
 ## 3. Modeling and Results
 
 ### Multiple Regression
 
 Regression models were refined using additional features, nonlinear terms, interaction effects, and a log transformation.
-
-The final model achieved a validation RMSE of **18,435.05 JPY**.
 
 ### LightGBM
 
@@ -34,21 +32,31 @@ Two prediction approaches were combined:
 
 Predictions were averaged across four random seeds.
 
-The final ensemble achieved a **SIGNATE submission RMSE of 18,271.76 JPY**.
+### Competition Results
 
-*The regression validation RMSE and competition submission RMSE were calculated on different datasets and are not directly comparable.*
+Both models were evaluated on the same SIGNATE competition evaluation dataset.
+
+| Model | RMSE (JPY) |
+|---|---:|
+| Multiple Regression | 22,658.98 |
+| LightGBM Ensemble | **16,319.86** |
+
+The LightGBM ensemble reduced RMSE by approximately **28.0%** compared with multiple regression.
+
+*The regression validation RMSE and competition RMSE were calculated on different datasets and are not directly comparable.*
 
 ## 4. Tools and Technologies
 
-R / R Markdown / tidyverse / ggplot2 / LightGBM 
+R / R Markdown / tidyverse / ggplot2 / LightGBM
 
 ## 5. How to Run
 
 1. Download `train.csv`, `test.csv`, and `sample_submit.csv` from SIGNATE.
 2. Place the datasets in the project directory.
 3. Run `rent_prediction_01_data_preprocessing.Rmd` to generate the processed datasets.
-4. Run `rent_prediction_02_EDA.Rmd` and `rent_prediction_03_regression_modeling.Rmd`.
-5. Run `rent_prediction_04_machine_learning.Rmd` to generate `submission.csv`.
+4. Run `rent_prediction_02_EDA.Rmd` for exploratory data analysis.
+5. Run `rent_prediction_03_regression_modeling.Rmd` to generate `submission_regression.csv`.
+6. Run `rent_prediction_04_machine_learning.Rmd` to generate `submission_lightgbm.csv`.
 
 ## 6. AI Assistance
 
