@@ -44,8 +44,6 @@ R / R Markdown / tidyverse / ggplot2 / LightGBM
 
 ## 5. How to Run
 
-## 5. How to Run
-
 1. Download `train.csv`, `test.csv`, and `sample_submit.csv` from SIGNATE.
 2. Place the datasets in the project directory.
 3. Run `rent_prediction_01_data_preprocessing.Rmd` to generate the processed datasets.
