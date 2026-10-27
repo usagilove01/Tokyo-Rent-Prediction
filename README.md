@@ -43,6 +43,8 @@ Both models were evaluated on the same SIGNATE competition evaluation dataset.
 
 The LightGBM ensemble reduced RMSE by approximately **28.0%** compared with multiple regression.
 
+*Differences in preprocessing and training data may also have contributed to the performance improvement.*
+
 ## 4. Tools and Technologies
 
 R / R Markdown / tidyverse / ggplot2 / LightGBM
@@ -58,7 +60,7 @@ R / R Markdown / tidyverse / ggplot2 / LightGBM
 
 ## 6. AI Assistance
 
-AI tools were used to assist with the implementation of machine learning models.
+AI tools were used to assist with the implementation of machine learning models, including model configuration and ensemble design.
 
 ## 7. Competition Attribution
 
