@@ -43,8 +43,6 @@ Both models were evaluated on the same SIGNATE competition evaluation dataset.
 
 The LightGBM ensemble reduced RMSE by approximately **28.0%** compared with multiple regression.
 
-*The regression validation RMSE and competition RMSE were calculated on different datasets and are not directly comparable.*
-
 ## 4. Tools and Technologies
 
 R / R Markdown / tidyverse / ggplot2 / LightGBM
