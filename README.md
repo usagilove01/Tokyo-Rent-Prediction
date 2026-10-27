@@ -44,11 +44,13 @@ R / R Markdown / tidyverse / ggplot2 / LightGBM
 
 ## 5. How to Run
 
+## 5. How to Run
+
 1. Download `train.csv`, `test.csv`, and `sample_submit.csv` from SIGNATE.
 2. Place the datasets in the project directory.
-3. Run `01_data_preprocessing` to generate the processed datasets.
-4. Run `02_EDA` and `03_regression_modeling`.
-5. Run `04_machine_learning` to generate `submission.csv`.
+3. Run `rent_prediction_01_data_preprocessing.Rmd` to generate the processed datasets.
+4. Run `rent_prediction_02_EDA.Rmd` and `rent_prediction_03_regression_modeling.Rmd`.
+5. Run `rent_prediction_04_machine_learning.Rmd` to generate `submission.csv`.
 
 ## 6. AI Assistance
 
