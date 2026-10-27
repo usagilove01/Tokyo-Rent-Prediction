@@ -38,7 +38,7 @@ The final ensemble achieved a **SIGNATE submission RMSE of 18,271.76 JPY**.
 
 ## 4. Tools and Technologies
 
-R / tidyverse / ggplot2 / LightGBM / R Markdown
+R / R Markdown / tidyverse / ggplot2 / LightGBM 
 
 ## 5. Project Structure
 
